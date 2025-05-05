@@ -1,8 +1,15 @@
 import { useCart } from "../context/CartContext";
 import { Link } from "react-router-dom";
+import { useState } from "react";
+import ConfirmDialog from "./ConfirmDialog";
 
 const Cart = () => {
-  const { cart, removeOneFromCart, removeAllFromCart, clearCart } = useCart();
+  const { cart, addToCart, removeOneFromCart, removeAllFromCart, clearCart } =
+    useCart();
+  const [confirmClear, setConfirmClear] = useState(false);
+  const [confirmRemoveIndex, setConfirmRemoveIndex] = useState<number | null>(
+    null
+  );
 
   const total = cart.items
     .reduce((sum, item) => sum + item.price * item.quantity, 0)
@@ -37,20 +44,30 @@ const Cart = () => {
                   {item.title}
                 </Link>
                 <p className="text-sm text-gray-500">
-                  {item.price.toFixed(2)} € × {item.quantity}
+                  {item.price.toFixed(2)} €
                 </p>
-                <div className="flex gap-2 mt-1">
+                <div className="flex items-center gap-2 mt-1">
+                  <span className="text-sm text-gray-600">Quantité :</span>
                   <button
                     onClick={() => removeOneFromCart(index)}
-                    className="text-sm px-2 py-1 bg-gray-200 hover:bg-gray-300 rounded"
+                    className="bg-gray-200 px-2 rounded hover:bg-gray-300"
                   >
-                    ➖ Retirer 1
+                    –
+                  </button>
+                  <span className="min-w-[1.5rem] text-center">
+                    {item.quantity}
+                  </span>
+                  <button
+                    onClick={() => addToCart(item)}
+                    className="bg-gray-200 px-2 rounded hover:bg-gray-300"
+                  >
+                    +
                   </button>
                   <button
-                    onClick={() => removeAllFromCart(index)}
-                    className="text-sm text-red-500 hover:text-red-600"
+                    onClick={() => setConfirmRemoveIndex(index)}
+                    className="ml-4 text-sm text-red-500 hover:text-red-600"
                   >
-                    Supprimer tout
+                    Supprimer
                   </button>
                 </div>
               </div>
@@ -60,7 +77,7 @@ const Cart = () => {
           <div className="mt-6 flex justify-between items-center border-t pt-4">
             <span className="text-xl font-semibold">Total : {total} €</span>
             <button
-              onClick={clearCart}
+              onClick={() => setConfirmClear(true)}
               className="bg-red-500 text-white px-4 py-2 rounded-xl hover:bg-red-600"
             >
               Vider le panier
@@ -68,6 +85,31 @@ const Cart = () => {
           </div>
         </div>
       )}
+
+      {/* Modale confirmation vider panier */}
+      <ConfirmDialog
+        isOpen={confirmClear}
+        title="Vider le panier"
+        message="Êtes-vous sûr de vouloir tout supprimer ?"
+        onCancel={() => setConfirmClear(false)}
+        onConfirm={() => {
+          clearCart();
+          setConfirmClear(false);
+        }}
+      />
+
+      {/* Modale confirmation supprimer un produit */}
+      <ConfirmDialog
+        isOpen={confirmRemoveIndex !== null}
+        title="Supprimer cet article"
+        message="Souhaitez-vous supprimer tous les exemplaires de ce produit ?"
+        onCancel={() => setConfirmRemoveIndex(null)}
+        onConfirm={() => {
+          if (confirmRemoveIndex !== null)
+            removeAllFromCart(confirmRemoveIndex);
+          setConfirmRemoveIndex(null);
+        }}
+      />
     </div>
   );
 };
